@@ -60,7 +60,3 @@ def tb_cleaner(filename_filter):
         return ''.join(exc_list)
 
     return format_tb_with_filter
-
-# inspired by http://www.creativelydo.com/blog/how-to-globally-customize-exceptions-in-python/
-def debug_with_values():
-    pass
