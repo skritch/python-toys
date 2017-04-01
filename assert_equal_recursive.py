@@ -7,17 +7,16 @@ class TestRecursive(unittest.TestCase):
         """
         Asserts that two nested JSON-like structures consisting of dictionaries and lists are fully equal.
 
-
         >>> TestRecursive().assertEqualRecursive({1: [{'a': 2}, 'b']}, {1: [{'a': 3}, 'b']})
         Traceback (most recent call last):
         ...
-        AssertionError:
+        AssertionError: 1 error:
         Values differ: 2 != 3 at [1][0][a]
 
         """
         paths = self._check_equal_recursive(first, second)
         if paths:
-            msg = '\n' + '\n'.join(paths)
+            msg = '{} error{}:\n'.format(len(paths), 's' if len(paths) > 1 else '') + '\n'.join(paths)
             raise self.failureException(msg)
 
     def _check_equal_recursive(self, first, second, *path_so_far):
