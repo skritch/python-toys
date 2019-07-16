@@ -14,6 +14,7 @@ TODO:
     leaving up to the caller (but I don't think so). At least provide an example of batching something that
     is prohibitively large to keep in memory (either along with `list()` or `tee()`).
 - setdefault and other mutating methods?
+- Make compatible with python 2 or 3
 """
 
 from functools import reduce
@@ -58,10 +59,18 @@ class Mapped(object):
 
     @property
     def _all_steps(self):
+        def identity(x):
+            return x
+
+        def compose(f, g):
+            def composed(i):
+                return g(f(i))
+            return composed
+
         return reduce(
-            lambda f, g: lambda x: g(f(x)),  # function composition
+            compose,  # function composition
             self._steps,
-            lambda x: x  # initializer
+            identity  # initializer
         )
 
     def __getattr__(self, name):
@@ -72,14 +81,19 @@ class Mapped(object):
         >>> list(points.x)
         [1, 2]
         """
-        return self._add_step(lambda i: getattr(i, name))
+
+        def __getattr__(i):
+            return getattr(i, name)
+        return self._add_step(__getattr__)
 
     def __getitem__(self, key):
         """
         >>> list(Mapped([[1], [2]])[0])
         [1, 2]
         """
-        return self._add_step(lambda i: i[key])
+        def __getitem__(i):
+            return i[key]
+        return self._add_step(__getitem__)
 
     def _get(self, key, default=None):
         """
@@ -89,7 +103,10 @@ class Mapped(object):
         [1, 2]
 
         """
-        return self._add_step(lambda i: self._get_even_from_list(i, key, default))
+        def _get(i):
+            return self._get_even_from_list(i, key, default)
+
+        return self._add_step(_get)
 
     def __or__(self, f):
         """
@@ -107,7 +124,9 @@ class Mapped(object):
 
         TBD: I don't think *args, **kwargs is sufficient here.
         """
-        return self._add_step(lambda x: x(*args, **kwargs))
+        def __call__(f):
+            return f(*args, **kwargs)
+        return self._add_step(__call__)
 
     @staticmethod
     def _get_even_from_list(obj, key, default=None):
